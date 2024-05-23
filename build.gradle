@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Curity AB
+ * Copyright 2024 Curity AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,40 @@
 
 plugins {
     id 'java-library'
+    id 'groovy'
 }
+
+group = 'io.curity.identityserver.plugin.data.access.json'
+version = '0.0.1'
+description = 'JSON DAP with Clients support'
 
 repositories {
     mavenLocal()
-    maven {
-        url = uri('https://repo.maven.apache.org/maven2/')
-    }
+    mavenCentral()
 }
 
 dependencies {
-    api 'org.bitbucket.b_c:jose4j:0.9.6'
     compileOnly 'se.curity.identityserver:identityserver.sdk:9.2.0'
-    compileOnly 'org.slf4j:slf4j-api:1.7.36'
-    compileOnly 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.10'
+    compileOnly 'org.slf4j:slf4j-api:2.0.12'
+    implementation 'com.google.guava:guava:33.2.0-jre'
+
+    testImplementation 'se.curity.identityserver:identityserver.sdk:9.2.0'
+    testImplementation 'org.codehaus.groovy:groovy-json:3.0.21'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    testImplementation 'org.spockframework:spock-core:2.4-M4-groovy-4.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-group = 'io.curity.identityserver.plugins.authenticator'
-java.sourceCompatibility = JavaVersion.VERSION_21
-version = '1.0.0' // Version release
-description = 'Curity Authenticator Description' // Description of the plugin
-
-
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
-tasks.withType(Javadoc) {
-    options.encoding = 'UTF-8'
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "started", "passed", "skipped", "failed"
+    }
 }
 
-task printProperties {
-    println "version:  $version"
-}
