@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Curity AB. All rights reserved.
+ * Copyright (C) 2024 Curity AB. All rights reserved.
  *
  * The contents of this file are the property of Curity AB.
  * You may not copy or use this file, in either source code
@@ -12,6 +12,7 @@
 package io.curity.identityserver.plugin.data.access.json;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import static java.util.Collections.singletonList;
@@ -42,5 +43,23 @@ final class CollectionUtils
         }
 
         return result;
+    }
+
+    // Helper method to put a single value in the map if the value is not null
+    static void putIfNotNull(Map<String, Collection<String>> map, String key, String value)
+    {
+        if (value != null && !value.isEmpty())
+        {
+            map.put(key, Collections.singletonList(value));
+        }
+    }
+
+    // Helper method to put a collection in the map if the collection is not empty or null
+    static void putIfNotEmpty(Map<String, Collection<String>> map, String key, Collection<String> values)
+    {
+        if (values != null && !values.isEmpty())
+        {
+            map.put(key, values);
+        }
     }
 }

@@ -16,25 +16,12 @@
 
 package io.curity.identityserver.plugin.data.access.json.config;
 
-import se.curity.identityserver.sdk.config.Configuration;
-import se.curity.identityserver.sdk.config.annotation.Name;
-import se.curity.identityserver.sdk.service.Json;
-import se.curity.identityserver.sdk.service.WebServiceClient;
+import se.curity.identityserver.sdk.config.annotation.DefaultString;
+import se.curity.identityserver.sdk.config.annotation.Description;
 
-public interface JsonDataAccessProviderConfiguration extends Configuration
+public interface DatabaseClientConfiguration
 {
-
-    WebServiceClient webServiceClient();
-
-    Json json();
-
-    @Name("credential-access")
-    CredentialAccessConfiguration getCredentialAccessConfiguration();
-
-    @Name("attributes")
-    AttributesConfiguration getAttributesConfiguration();
-
-    @Name("database-client")
-    DatabaseClientConfiguration getDatabaseClientConfiguration();
-
+    @Description("The path relative to the webservice context to make the requests to.")
+    @DefaultString("/")
+    String urlPath();
 }
