@@ -34,7 +34,6 @@ import se.curity.identityserver.sdk.http.HttpResponse;
 import se.curity.identityserver.sdk.service.Json;
 import se.curity.identityserver.sdk.service.WebServiceClient;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,49 +59,32 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     }
 
     @Override
-    public @Nullable DatabaseClientAttributes getClientById(String clientId, String profileId)
-    {
-        _logger.debug("Getting database client with Id: {} and profileId: {}", clientId, profileId);
-
-        HttpResponse jsonResponse = _webServiceClient
-                .withPath(String.join("/", _configuration.urlPath(), clientId))
-                .request()
-                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .method("GET")
-                .response();
-
-        String jsonResponseBody = jsonResponse.body(asString());
-        _logger.debug("Received database client JSON response: {}", jsonResponseBody);
-
-        Map<String, Object> databaseClientMap = _json.fromJson(jsonResponseBody);
-        if ("404".equals(databaseClientMap.get("status")))
-        {
-            return null;
-        }
-
-        return DatabaseClientAttributes.from(databaseClientMap);
-    }
-
-    @Override
     public DatabaseClientAttributes create(DatabaseClientAttributes attributes, String profileId)
     {
         _logger.debug("Creating a new database client with profileId: {} and attributes : {}", profileId, attributes);
         attributes = attributes.withMeta(Meta.of("dbClient", Instant.now(), Instant.now()));
 
-        HttpResponse jsonResponse = _webServiceClient
-                .withPath(_configuration.urlPath())
-                .request()
-                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .body(HttpRequest.fromString(_json.toJson(attributes), StandardCharsets.UTF_8))
-                .method("POST")
-                .response();
+        HttpResponse httpResponse = sendRequestWithBody("POST", _configuration.urlPath(), _json.toJson(attributes));
+        _logger.debug("Received new database client JSON response: {}", httpResponse.body(asString()));
 
-        String jsonResponseBody = jsonResponse.body(asString());
-        _logger.debug("Received new database client JSON response: {}", jsonResponseBody);
+        return DatabaseClientAttributes.from(_json.fromJson(httpResponse.body(asString())));
+    }
 
-        Map<String, Object> databaseClientMap = _json.fromJson(jsonResponseBody);
+    @Override
+    public @Nullable DatabaseClientAttributes getClientById(String clientId, String profileId)
+    {
+        _logger.debug("Getting database client with Id: {} and profileId: {}", clientId, profileId);
+
+        HttpResponse httpResponse = sendRequestWithOutBody("GET", String.join("/", _configuration.urlPath(), clientId));
+        _logger.debug("Received database client JSON response: {}", httpResponse.body(asString()));
+
+        Map<String, Object> databaseClientMap = _json.fromJson(httpResponse.body(asString()));
+
+        // This is to avoid errors when trying to create a new database client from the UI
+        if ("404".equals(databaseClientMap.get("status")))
+        {
+            return null;
+        }
 
         return DatabaseClientAttributes.from(databaseClientMap);
     }
@@ -113,37 +95,18 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         _logger.debug("Updating the database client with profileId: {} and attributes : {}", profileId, attributes);
         attributes = attributes.withMeta(Meta.of("dbClient", null, Instant.now()));
 
-        HttpResponse jsonResponse = _webServiceClient
-                .withPath(_configuration.urlPath())
-                .request()
-                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .body(HttpRequest.fromString(_json.toJson(attributes), StandardCharsets.UTF_8))
-                .method("PUT")
-                .response();
+        HttpResponse httpResponse = sendRequestWithBody("PUT", _configuration.urlPath(), _json.toJson(attributes));
+        _logger.debug("Received updated database client JSON response: {}", httpResponse.body(asString()));
 
-        String jsonResponseBody = jsonResponse.body(asString());
-        _logger.debug("Received updated database client JSON response: {}", jsonResponseBody);
-
-        Map<String, Object> databaseClientMap = _json.fromJson(jsonResponseBody);
-
-        return DatabaseClientAttributes.from(databaseClientMap);
+        return DatabaseClientAttributes.from(_json.fromJson(httpResponse.body(asString())));
     }
 
     @Override
     public boolean delete(String clientId, String profileId)
     {
         _logger.debug("Deleting database client with Id: {} and profileId: {}", clientId, profileId);
-
-        _webServiceClient
-                .withPath(String.join("/", _configuration.urlPath(), clientId))
-                .request()
-                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .method("DELETE")
-                .response();
-
-        return true;
+        HttpResponse httpResponse = sendRequestWithOutBody("DELETE", String.join("/", _configuration.urlPath(), clientId));
+        return WebUtils.hasSuccessStatusCode(httpResponse);
     }
 
     @Override
@@ -158,7 +121,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         _logger.debug("Requesting database clients with profileId: {}, activeClientsOnly: {}", profileId, activeClientsOnly);
 
         Map<String, Collection<String>> queryParams = prepareQueryParamsMap(filters, paginationRequest, sortRequest, activeClientsOnly);
-        _logger.debug("getAllClientsBy Query Parameters: {}", queryParams);
+        _logger.debug("Query Parameters: {}", queryParams);
 
         HttpResponse jsonResponse = _webServiceClient
                 .withPath(_configuration.urlPath())
@@ -172,9 +135,10 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         String jsonResponseBody = jsonResponse.body(asString());
         _logger.debug("Received database clients JSON response: {}", jsonResponseBody);
 
-        List<Map> objects = (List<Map>) _json.fromJsonArray(jsonResponseBody);
+        List<?> databaseClients = _json.fromJsonArray(jsonResponseBody);
 
-        List<DatabaseClientAttributes> databaseClientList = objects.stream()
+        List<DatabaseClientAttributes> databaseClientList = databaseClients.stream()
+                .map(Map.class::cast)
                 .map(DatabaseClientAttributes::from)
                 .toList();
 
@@ -187,7 +151,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
                                                                   boolean activeClientsOnly)
     {
         Map<String, Collection<String>> queryParams = new HashMap<>();
-        // Add activeClientsOnly if filters is not null
+
         if (filters != null)
         {
             putIfNotNull(queryParams, "activeClientsOnly", String.valueOf(activeClientsOnly));
@@ -196,14 +160,12 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
             putIfNotEmpty(queryParams, "tags_filter", filters.getTagsFilter());
         }
 
-        // Add pagination parameters if paginationRequest is not null
         if (paginationRequest != null)
         {
             putIfNotNull(queryParams, "count", String.valueOf(paginationRequest.getCount()));
             putIfNotNull(queryParams, "cursor", paginationRequest.getCursor());
         }
 
-        // Add sorting parameters if sortRequest is not null
         if (sortRequest != null)
         {
             putIfNotNull(queryParams, "sort_by", sortRequest.getSortBy());
@@ -218,5 +180,28 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     public long getClientCountBy(String profileId, @Nullable DatabaseClientAttributesFiltering filters, boolean activeClientsOnly)
     {
         return 0;
+    }
+
+    private HttpResponse sendRequestWithBody(String method, String urlPath, String requestBody)
+    {
+        return _webServiceClient
+                .withPath(urlPath)
+                .request()
+                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
+                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
+                .body(HttpRequest.fromString(requestBody))
+                .method(method)
+                .response();
+    }
+
+    private HttpResponse sendRequestWithOutBody(String method, String urlPath)
+    {
+        return _webServiceClient
+                .withPath(urlPath)
+                .request()
+                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
+                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
+                .method(method)
+                .response();
     }
 }

@@ -21,7 +21,7 @@ import se.curity.identityserver.sdk.config.annotation.Description;
 
 public interface DatabaseClientConfiguration
 {
-    @Description("The path relative to the webservice context to make the requests to.")
+    @Description("The path relative to the webservice context to make the requests to the database clients endpoint")
     @DefaultString("/")
     String urlPath();
 }
