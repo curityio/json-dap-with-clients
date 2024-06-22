@@ -123,7 +123,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         Map<String, Collection<String>> queryParams = prepareQueryParamsMap(filters, paginationRequest, sortRequest, activeClientsOnly);
         _logger.debug("Query Parameters: {}", queryParams);
 
-        HttpResponse jsonResponse = _webServiceClient
+        HttpResponse httpResponse = _webServiceClient
                 .withPath(_configuration.urlPath())
                 .withQueries(queryParams)
                 .request()
@@ -132,10 +132,8 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
                 .method("GET")
                 .response();
 
-        String jsonResponseBody = jsonResponse.body(asString());
-        _logger.debug("Received database clients JSON response: {}", jsonResponseBody);
-
-        List<?> databaseClients = _json.fromJsonArray(jsonResponseBody);
+        _logger.debug("Received database clients JSON response: {}", httpResponse.body(asString()));
+        List<?> databaseClients = _json.fromJsonArray(httpResponse.body(asString()));
 
         List<DatabaseClientAttributes> databaseClientList = databaseClients.stream()
                 .map(Map.class::cast)
