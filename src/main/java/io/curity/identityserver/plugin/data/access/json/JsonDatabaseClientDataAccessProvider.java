@@ -64,7 +64,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         _logger.debug("Creating a new database client with profileId: {} and attributes : {}", profileId, attributes);
         attributes = attributes.withMeta(Meta.of("dbClient", Instant.now(), Instant.now()));
 
-        HttpResponse httpResponse = sendRequestWithBody("POST", _configuration.urlPath(), _json.toJson(attributes));
+        HttpResponse httpResponse = sendHttpRequest("POST", _configuration.urlPath(), _json.toJson(attributes));
         _logger.debug("Received new database client JSON response: {}", httpResponse.body(asString()));
 
         return DatabaseClientAttributes.from(_json.fromJson(httpResponse.body(asString())));
@@ -75,7 +75,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     {
         _logger.debug("Getting database client with Id: {} and profileId: {}", clientId, profileId);
 
-        HttpResponse httpResponse = sendRequestWithOutBody("GET", String.join("/", _configuration.urlPath(), clientId));
+        HttpResponse httpResponse = sendHttpRequest("GET", String.join("/", _configuration.urlPath(), clientId), null);
         _logger.debug("Received database client JSON response: {}", httpResponse.body(asString()));
 
         Map<String, Object> databaseClientMap = _json.fromJson(httpResponse.body(asString()));
@@ -95,7 +95,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         _logger.debug("Updating the database client with profileId: {} and attributes : {}", profileId, attributes);
         attributes = attributes.withMeta(Meta.of("dbClient", null, Instant.now()));
 
-        HttpResponse httpResponse = sendRequestWithBody("PUT", _configuration.urlPath(), _json.toJson(attributes));
+        HttpResponse httpResponse = sendHttpRequest("PUT", _configuration.urlPath(), _json.toJson(attributes));
         _logger.debug("Received updated database client JSON response: {}", httpResponse.body(asString()));
 
         return DatabaseClientAttributes.from(_json.fromJson(httpResponse.body(asString())));
@@ -105,7 +105,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     public boolean delete(String clientId, String profileId)
     {
         _logger.debug("Deleting database client with Id: {} and profileId: {}", clientId, profileId);
-        HttpResponse httpResponse = sendRequestWithOutBody("DELETE", String.join("/", _configuration.urlPath(), clientId));
+        HttpResponse httpResponse = sendHttpRequest("DELETE", String.join("/", _configuration.urlPath(), clientId), null);
         return WebUtils.hasSuccessStatusCode(httpResponse);
     }
 
@@ -180,26 +180,18 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         return 0;
     }
 
-    private HttpResponse sendRequestWithBody(String method, String urlPath, String requestBody)
+    private HttpResponse sendHttpRequest(String method, String urlPath, String requestBody)
     {
-        return _webServiceClient
-                .withPath(urlPath)
+        HttpRequest.Builder requestBuilder = _webServiceClient.withPath(urlPath)
                 .request()
                 .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .body(HttpRequest.fromString(requestBody))
-                .method(method)
-                .response();
-    }
+                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString());
 
-    private HttpResponse sendRequestWithOutBody(String method, String urlPath)
-    {
-        return _webServiceClient
-                .withPath(urlPath)
-                .request()
-                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .method(method)
-                .response();
+        if (requestBody != null)
+        {
+            requestBuilder.body(HttpRequest.fromString(requestBody));
+        }
+
+        return requestBuilder.method(method).response();
     }
 }
