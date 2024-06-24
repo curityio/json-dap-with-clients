@@ -65,9 +65,11 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         attributes = attributes.withMeta(Meta.of("dbClient", Instant.now(), Instant.now()));
 
         HttpResponse httpResponse = sendHttpRequest("POST", _configuration.urlPath(), _json.toJson(attributes));
-        _logger.debug("Received new database client JSON response: {}", httpResponse.body(asString()));
+        String responseBody = httpResponse.body(asString());
 
-        return DatabaseClientAttributes.from(_json.fromJson(httpResponse.body(asString())));
+        _logger.debug("Received new database client JSON response: {}", responseBody);
+
+        return DatabaseClientAttributes.from(_json.fromJson(responseBody));
     }
 
     @Override
@@ -76,9 +78,10 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         _logger.debug("Getting database client with Id: {} and profileId: {}", clientId, profileId);
 
         HttpResponse httpResponse = sendHttpRequest("GET", String.join("/", _configuration.urlPath(), clientId), (String) null);
-        _logger.debug("Received database client JSON response: {}", httpResponse.body(asString()));
+        String responseBody = httpResponse.body(asString());
+        _logger.debug("Received database client JSON response: {}", responseBody);
 
-        Map<String, Object> databaseClientMap = _json.fromJson(httpResponse.body(asString()));
+        Map<String, Object> databaseClientMap = _json.fromJson(responseBody);
 
         // This is to avoid errors when trying to create a new database client from the UI
         if ("404".equals(databaseClientMap.get("status")))
@@ -96,9 +99,11 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         attributes = attributes.withMeta(Meta.of("dbClient", null, Instant.now()));
 
         HttpResponse httpResponse = sendHttpRequest("PUT", _configuration.urlPath(), _json.toJson(attributes));
-        _logger.debug("Received updated database client JSON response: {}", httpResponse.body(asString()));
+        String responseBody = httpResponse.body(asString());
 
-        return DatabaseClientAttributes.from(_json.fromJson(httpResponse.body(asString())));
+        _logger.debug("Received updated database client JSON response: {}", responseBody);
+
+        return DatabaseClientAttributes.from(_json.fromJson(responseBody));
     }
 
     @Override
@@ -124,9 +129,10 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         _logger.debug("Query Parameters: {}", queryParams);
 
         HttpResponse httpResponse = sendHttpRequest("GET", _configuration.urlPath(), queryParams);
+        String responseBody = httpResponse.body(asString());
 
-        _logger.debug("Received database clients JSON response: {}", httpResponse.body(asString()));
-        List<?> databaseClients = _json.fromJsonArray(httpResponse.body(asString()));
+        _logger.debug("Received database clients JSON response: {}", responseBody);
+        List<?> databaseClients = _json.fromJsonArray(responseBody);
 
         List<DatabaseClientAttributes> databaseClientList = databaseClients.stream()
                 .map(Map.class::cast)
@@ -179,6 +185,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
 
         long count = _json.fromJsonArray(httpResponse.body(asString())).size();
         _logger.debug("Total count of database clients returned : {}", count);
+
         return count;
     }
 
