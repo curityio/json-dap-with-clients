@@ -75,7 +75,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     {
         _logger.debug("Getting database client with Id: {} and profileId: {}", clientId, profileId);
 
-        HttpResponse httpResponse = sendHttpRequest("GET", String.join("/", _configuration.urlPath(), clientId), null);
+        HttpResponse httpResponse = sendHttpRequest("GET", String.join("/", _configuration.urlPath(), clientId), (String) null);
         _logger.debug("Received database client JSON response: {}", httpResponse.body(asString()));
 
         Map<String, Object> databaseClientMap = _json.fromJson(httpResponse.body(asString()));
@@ -105,7 +105,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     public boolean delete(String clientId, String profileId)
     {
         _logger.debug("Deleting database client with Id: {} and profileId: {}", clientId, profileId);
-        HttpResponse httpResponse = sendHttpRequest("DELETE", String.join("/", _configuration.urlPath(), clientId), null);
+        HttpResponse httpResponse = sendHttpRequest("DELETE", String.join("/", _configuration.urlPath(), clientId), (String) null);
         return WebUtils.hasSuccessStatusCode(httpResponse);
     }
 
@@ -123,14 +123,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         Map<String, Collection<String>> queryParams = prepareQueryParamsMap(filters, paginationRequest, sortRequest, activeClientsOnly);
         _logger.debug("Query Parameters: {}", queryParams);
 
-        HttpResponse httpResponse = _webServiceClient
-                .withPath(_configuration.urlPath())
-                .withQueries(queryParams)
-                .request()
-                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString())
-                .method("GET")
-                .response();
+        HttpResponse httpResponse = sendHttpRequest("GET", _configuration.urlPath(), queryParams);
 
         _logger.debug("Received database clients JSON response: {}", httpResponse.body(asString()));
         List<?> databaseClients = _json.fromJsonArray(httpResponse.body(asString()));
@@ -177,7 +170,16 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     @Override
     public long getClientCountBy(String profileId, @Nullable DatabaseClientAttributesFiltering filters, boolean activeClientsOnly)
     {
-        return 0;
+        _logger.debug("Getting count of clients with profileId: {}, activeClientsOnly: {}", profileId, activeClientsOnly);
+
+        Map<String, Collection<String>> queryParams = prepareQueryParamsMap(filters, null, null, activeClientsOnly);
+        _logger.debug("Query Parameters for fetching database clients count : {}", queryParams);
+
+        HttpResponse httpResponse = sendHttpRequest("GET", _configuration.urlPath(), queryParams);
+
+        long count = _json.fromJsonArray(httpResponse.body(asString())).size();
+        _logger.debug("Total count of database clients returned : {}", count);
+        return count;
     }
 
     private HttpResponse sendHttpRequest(String method, String urlPath, String requestBody)
@@ -191,6 +193,17 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         {
             requestBuilder.body(HttpRequest.fromString(requestBody));
         }
+
+        return requestBuilder.method(method).response();
+    }
+
+    private HttpResponse sendHttpRequest(String method, String urlPath, Map<String, Collection<String>> queryParams)
+    {
+        HttpRequest.Builder requestBuilder = _webServiceClient.withPath(urlPath)
+                .withQueries(queryParams)
+                .request()
+                .accept(JsonClientRequestContentType.APPLICATION_JSON.toString())
+                .contentType(JsonClientRequestContentType.APPLICATION_JSON.toString());
 
         return requestBuilder.method(method).response();
     }

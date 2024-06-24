@@ -34,7 +34,7 @@ public interface JsonDataAccessProviderConfiguration extends Configuration
     @Name("attributes")
     AttributesConfiguration getAttributesConfiguration();
 
-    @Name("database-client")
+    @Name("database-clients")
     DatabaseClientConfiguration getDatabaseClientConfiguration();
 
 }
