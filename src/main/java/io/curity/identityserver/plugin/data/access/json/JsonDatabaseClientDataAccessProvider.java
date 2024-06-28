@@ -29,6 +29,7 @@ import se.curity.identityserver.sdk.datasource.pagination.PaginatedDataAccessRes
 import se.curity.identityserver.sdk.datasource.pagination.PaginationRequest;
 import se.curity.identityserver.sdk.datasource.query.DatabaseClientAttributesFiltering;
 import se.curity.identityserver.sdk.datasource.query.DatabaseClientAttributesSorting;
+import se.curity.identityserver.sdk.http.HttpMethod;
 import se.curity.identityserver.sdk.http.HttpRequest;
 import se.curity.identityserver.sdk.http.HttpResponse;
 import se.curity.identityserver.sdk.service.Json;
@@ -64,7 +65,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         _logger.debug("Creating a new database client with profileId: {} and attributes : {}", profileId, attributes);
         attributes = attributes.withMeta(Meta.of("dbClient", Instant.now(), Instant.now()));
 
-        HttpResponse httpResponse = sendHttpRequest("POST", _configuration.urlPath(), _json.toJson(attributes));
+        HttpResponse httpResponse = sendHttpRequest(HttpMethod.POST.getMethodString(), _configuration.urlPath(), _json.toJson(attributes));
         String responseBody = httpResponse.body(asString());
 
         _logger.debug("Received new database client JSON response: {}", responseBody);
@@ -76,18 +77,18 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     public @Nullable DatabaseClientAttributes getClientById(String clientId, String profileId)
     {
         _logger.debug("Getting database client with Id: {} and profileId: {}", clientId, profileId);
+        HttpResponse httpResponse = sendHttpRequest(HttpMethod.GET.getMethodString(), String.join("/", _configuration.urlPath(), clientId), (String) null);
 
-        HttpResponse httpResponse = sendHttpRequest("GET", String.join("/", _configuration.urlPath(), clientId), (String) null);
+        // This is to avoid errors when trying to create a new database client from the UI
+        if (httpResponse.statusCode() == 404)
+        {
+            return null;
+        }
+
         String responseBody = httpResponse.body(asString());
         _logger.debug("Received database client JSON response: {}", responseBody);
 
         Map<String, Object> databaseClientMap = _json.fromJson(responseBody);
-
-        // This is to avoid errors when trying to create a new database client from the UI
-        if ("404".equals(databaseClientMap.get("status")))
-        {
-            return null;
-        }
 
         return DatabaseClientAttributes.from(databaseClientMap);
     }
@@ -98,7 +99,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         _logger.debug("Updating the database client with profileId: {} and attributes : {}", profileId, attributes);
         attributes = attributes.withMeta(Meta.of("dbClient", null, Instant.now()));
 
-        HttpResponse httpResponse = sendHttpRequest("PUT", _configuration.urlPath(), _json.toJson(attributes));
+        HttpResponse httpResponse = sendHttpRequest(HttpMethod.PUT.getMethodString(), _configuration.urlPath(), _json.toJson(attributes));
         String responseBody = httpResponse.body(asString());
 
         _logger.debug("Received updated database client JSON response: {}", responseBody);
@@ -110,7 +111,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
     public boolean delete(String clientId, String profileId)
     {
         _logger.debug("Deleting database client with Id: {} and profileId: {}", clientId, profileId);
-        HttpResponse httpResponse = sendHttpRequest("DELETE", String.join("/", _configuration.urlPath(), clientId), (String) null);
+        HttpResponse httpResponse = sendHttpRequest(HttpMethod.DELETE.getMethodString(), String.join("/", _configuration.urlPath(), clientId), (String) null);
         return WebUtils.hasSuccessStatusCode(httpResponse);
     }
 
@@ -128,7 +129,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         Map<String, Collection<String>> queryParams = prepareQueryParamsMap(filters, paginationRequest, sortRequest, activeClientsOnly);
         _logger.debug("Query Parameters: {}", queryParams);
 
-        HttpResponse httpResponse = sendHttpRequest("GET", _configuration.urlPath(), queryParams);
+        HttpResponse httpResponse = sendHttpRequest(HttpMethod.GET.getMethodString(), _configuration.urlPath(), queryParams);
         String responseBody = httpResponse.body(asString());
 
         _logger.debug("Received database clients JSON response: {}", responseBody);
@@ -142,9 +143,9 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         return new PaginatedDataAccessResult<>(databaseClientList, paginationRequest != null ? paginationRequest.getCursor() : null);
     }
 
-    private Map<String, Collection<String>> prepareQueryParamsMap(DatabaseClientAttributesFiltering filters,
-                                                                  PaginationRequest paginationRequest,
-                                                                  DatabaseClientAttributesSorting sortRequest,
+    private Map<String, Collection<String>> prepareQueryParamsMap(@Nullable DatabaseClientAttributesFiltering filters,
+                                                                  @Nullable PaginationRequest paginationRequest,
+                                                                  @Nullable DatabaseClientAttributesSorting sortRequest,
                                                                   boolean activeClientsOnly)
     {
         Map<String, Collection<String>> queryParams = new HashMap<>();
@@ -181,7 +182,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         Map<String, Collection<String>> queryParams = prepareQueryParamsMap(filters, null, null, activeClientsOnly);
         _logger.debug("Query Parameters for fetching database clients count : {}", queryParams);
 
-        HttpResponse httpResponse = sendHttpRequest("GET", _configuration.urlPath(), queryParams);
+        HttpResponse httpResponse = sendHttpRequest(HttpMethod.GET.getMethodString(), _configuration.urlPath(), queryParams);
 
         long count = _json.fromJsonArray(httpResponse.body(asString())).size();
         _logger.debug("Total count of database clients returned : {}", count);
@@ -189,7 +190,7 @@ public class JsonDatabaseClientDataAccessProvider implements DatabaseClientDataA
         return count;
     }
 
-    private HttpResponse sendHttpRequest(String method, String urlPath, String requestBody)
+    private HttpResponse sendHttpRequest(String method, String urlPath, @Nullable String requestBody)
     {
         HttpRequest.Builder requestBuilder = _webServiceClient.withPath(urlPath)
                 .request()

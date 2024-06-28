@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Curity AB. All rights reserved.
+ * Copyright (C) 2017 Curity AB. All rights reserved.
  *
  * The contents of this file are the property of Curity AB.
  * You may not copy or use this file, in either source code
@@ -10,6 +10,8 @@
  */
 
 package io.curity.identityserver.plugin.data.access.json;
+
+import se.curity.identityserver.sdk.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -45,8 +47,14 @@ final class CollectionUtils
         return result;
     }
 
-    // Helper method to put a single value in the map if the value is not null
-    static void putIfNotNull(Map<String, Collection<String>> map, String key, String value)
+    /**
+     * Helper method to put a single value in the map if the value is not null.
+     *
+     * @param map the map to put the value in
+     * @param key the key to associate the value with
+     * @param value the value to be put in the map if it is not null
+     */
+    static void putIfNotNull(Map<String, Collection<String>> map, String key, @Nullable String value)
     {
         if (value != null && !value.isEmpty())
         {
@@ -54,8 +62,14 @@ final class CollectionUtils
         }
     }
 
-    // Helper method to put a collection in the map if the collection is not empty or null
-    static void putIfNotEmpty(Map<String, Collection<String>> map, String key, Collection<String> values)
+    /**
+     * Helper method to put a collection in the map if the collection is not empty or null.
+     *
+     * @param map the map to put the collection in
+     * @param key the key to associate the collection with
+     * @param values the collection to be put in the map if it is not empty or null
+     */
+    static void putIfNotEmpty(Map<String, Collection<String>> map, String key, @Nullable Collection<String> values)
     {
         if (values != null && !values.isEmpty())
         {
