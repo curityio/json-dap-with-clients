@@ -18,11 +18,13 @@ package io.curity.identityserver.plugin.descriptor;
 
 import io.curity.identityserver.plugin.data.access.json.JsonAttributeDataAccessProvider;
 import io.curity.identityserver.plugin.data.access.json.JsonCredentialDataAccessProvider;
+import io.curity.identityserver.plugin.data.access.json.JsonDatabaseClientDataAccessProvider;
 import io.curity.identityserver.plugin.data.access.json.config.JsonDataAccessProviderConfiguration;
 import se.curity.identityserver.sdk.Nullable;
 import se.curity.identityserver.sdk.config.Configuration;
 import se.curity.identityserver.sdk.datasource.AttributeDataAccessProvider;
 import se.curity.identityserver.sdk.datasource.CredentialDataAccessProvider;
+import se.curity.identityserver.sdk.datasource.DatabaseClientDataAccessProvider;
 import se.curity.identityserver.sdk.plugin.descriptor.DataAccessProviderPluginDescriptor;
 
 @SuppressWarnings("unused")
@@ -54,4 +56,9 @@ public class JsonDataAccessPluginDescriptor implements DataAccessProviderPluginD
         return JsonAttributeDataAccessProvider.class;
     }
 
+    @Override
+    public Class<? extends DatabaseClientDataAccessProvider> getDatabaseClientDataAccessProvider()
+    {
+        return JsonDatabaseClientDataAccessProvider.class;
+    }
 }
