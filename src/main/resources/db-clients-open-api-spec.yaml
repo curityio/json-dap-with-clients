@@ -1,0 +1,841 @@
+openapi: 3.0.1
+info:
+  title: JSON Datasource database client API
+  description: This lists all of the APIs needed to manage database clients.These
+    APIs are protected by OAUTH tokens
+  version: v1.0
+servers:
+  - url: https://localhost:7777
+tags:
+  - name: JSON Database Client DAP
+    description: Manages database clients
+paths:
+  /api/dbclients:
+    get:
+      tags:
+        - JSON Database Client DAP
+      summary: Returns all clients matching the filter criterion
+      operationId: getAllClientsBy
+      parameters:
+        - name: filters
+          in: query
+          schema:
+            $ref: '#/components/schemas/DatabaseClientAttributesFiltering'
+        - name: paginationRequest
+          in: query
+          schema:
+            $ref: '#/components/schemas/PaginationRequest'
+        - name: sortRequest
+          in: query
+          schema:
+            $ref: '#/components/schemas/DatabaseClientAttributesSorting'
+        - name: activeClientsOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "401":
+          description: unauthorized
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseClientAttributes'
+        "404":
+          description: client not found
+    post:
+      tags:
+        - JSON Database Client DAP
+      summary: Create a database client by providing DatabaseClientAttributes
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatabaseClientAttributes'
+      responses:
+        "409":
+          description: client already exists
+        "201":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseClientAttributes'
+        "401":
+          description: unauthorized
+  /api/dbclients/{clientId}:
+    get:
+      tags:
+        - JSON Database Client DAP
+      summary: Get a database client by it's Id
+      operationId: getClientById
+      parameters:
+        - name: clientId
+          in: path
+          description: id of client to be searched
+          required: true
+          schema:
+            type: string
+      responses:
+        "401":
+          description: unauthorized
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseClientAttributes'
+        "404":
+          description: client not found
+    delete:
+      tags:
+        - JSON Database Client DAP
+      summary: Delete a database client by it's Id
+      operationId: delete
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "401":
+          description: unauthorized
+        "200":
+          description: success
+          content:
+            application/json: {}
+        "404":
+          description: client not found
+  /api/dbclients/count:
+    get:
+      tags:
+        - JSON Database Client DAP
+      summary: Returns the count of all clients matching the filter criterion
+      operationId: getClientCountBy
+      parameters:
+        - name: filters
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/DatabaseClientAttributesFiltering'
+        - name: activeClientsOnly
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "401":
+          description: unauthorized
+        "200":
+          description: success
+          content:
+            application/json: {}
+        "404":
+          description: client not found
+components:
+  schemas:
+    AssertionCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+        jwt:
+          $ref: '#/components/schemas/JwtAssertionAttributes'
+    AssistedTokenCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+    BackchannelCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+        allowed_backchannel_authenticators:
+          type: array
+          items:
+            type: string
+    ByRefRequestObjectAttributes:
+      type: object
+      properties:
+        allowed_request_urls:
+          type: array
+          items:
+            type: string
+        http_client_id:
+          type: string
+    ClientAttestation:
+      type: object
+      properties:
+        attestationType:
+          type: string
+          enum:
+            - WEB
+            - ANDROID
+            - IOS
+            - DISABLE
+    ClientAttestationAttributes:
+      type: object
+      properties:
+        attestationType:
+          type: string
+          enum:
+            - WEB
+            - ANDROID
+            - IOS
+            - DISABLE
+        clientAttestation:
+          $ref: '#/components/schemas/ClientAttestation'
+    ClientAuthenticationAttributes:
+      type: object
+      properties:
+        secondary_verifier_expiration:
+          type: string
+          format: date-time
+        secondaryVerifierExpirationEpochSeconds:
+          type: integer
+          format: int64
+        primary:
+          $ref: '#/components/schemas/ClientAuthenticationVerifier'
+        secondary:
+          $ref: '#/components/schemas/ClientAuthenticationVerifier'
+    ClientAuthenticationMethod:
+      type: object
+      properties:
+        clientAuthenticationType:
+          type: string
+          enum:
+            - asymmetric_key_id
+            - symmetric_key
+            - mutual_tls
+            - mutual_tls_by_proxy
+            - credential_manager_id
+            - secret
+            - jwks
+            - jwks_uri
+            - no_authentication
+    ClientAuthenticationVerifier:
+      type: object
+      properties:
+        clientAuthenticationMethod:
+          $ref: '#/components/schemas/ClientAuthenticationMethod'
+        secret:
+          type: string
+        asymmetric_key_id:
+          type: string
+        symmetric_key:
+          type: string
+        credential_manager_id:
+          type: string
+        no_authentication:
+          type: string
+    ClientCapabilitiesAttributes:
+      type: object
+      properties:
+        assisted_token:
+          $ref: '#/components/schemas/AssistedTokenCapability'
+        client_credentials:
+          $ref: '#/components/schemas/ClientCredentialsCapability'
+        introspection:
+          $ref: '#/components/schemas/IntrospectionCapability'
+        token_exchange:
+          $ref: '#/components/schemas/TokenExchangeCapability'
+        backchannel:
+          $ref: '#/components/schemas/BackchannelCapability'
+        code:
+          $ref: '#/components/schemas/CodeCapability'
+        implicit:
+          $ref: '#/components/schemas/ImplicitCapability'
+        resource_owner_password:
+          $ref: '#/components/schemas/RopcCapability'
+        assertion:
+          $ref: '#/components/schemas/AssertionCapability'
+        haapi:
+          $ref: '#/components/schemas/HaapiCapability'
+    ClientCredentialsCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+    CodeCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+        proof_key:
+          $ref: '#/components/schemas/ProofKeyAttributes'
+        require_pushed_authorization_request:
+          type: boolean
+    DatabaseClientAttributes:
+      type: object
+      properties:
+        name:
+          type: string
+        properties:
+          type: object
+          additionalProperties:
+            type: object
+        owner:
+          type: string
+        require_secured_authorization_response:
+          type: boolean
+        validate_port_on_loopback_interfaces:
+          type: boolean
+        redirect_uri_validation_policy_id:
+          type: string
+        client_authentication:
+          $ref: '#/components/schemas/ClientAuthenticationAttributes'
+        userinfo_signed_issuer_id:
+          type: string
+        allow_per_request_redirect_uris:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+            - REVOKED
+        tags:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        audiences:
+          type: array
+          items:
+            type: string
+        logo_uri:
+          type: string
+        tos_uri:
+          type: string
+        policy_uri:
+          type: string
+        subject_type:
+          type: string
+        client_id:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        redirect_uris:
+          type: array
+          items:
+            type: string
+        access_token_ttl:
+          type: integer
+          format: int64
+        user_authentication:
+          $ref: '#/components/schemas/UserAuthenticationConfigAttributes'
+        capabilities:
+          $ref: '#/components/schemas/ClientCapabilitiesAttributes'
+        refresh_token:
+          $ref: '#/components/schemas/RefreshTokenConfigAttributes'
+        id_token:
+          $ref: '#/components/schemas/IdTokenConfigAttributes'
+        application_url:
+          type: string
+        allowed_origins:
+          type: array
+          items:
+            type: string
+        request_object:
+          $ref: '#/components/schemas/RequestObjectAttributes'
+        sector_identifier:
+          type: string
+        claim_mapper_id:
+          type: string
+        id:
+          type: string
+        schemas:
+          type: array
+          items:
+            type: string
+        externalId:
+          type: string
+        meta:
+          $ref: '#/components/schemas/Meta'
+        empty:
+          type: boolean
+    HaapiCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+        issue_token_bound_authorization_code:
+          type: boolean
+        client_attestation:
+          $ref: '#/components/schemas/ClientAttestationAttributes'
+    IdTokenConfigAttributes:
+      type: object
+      properties:
+        id_token_ttl:
+          type: integer
+          format: int64
+        id_token_encryption:
+          $ref: '#/components/schemas/JweEncryptionAttributes'
+    ImplicitCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+    IntrospectionCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+    JweEncryptionAttributes:
+      type: object
+      properties:
+        allowed_key_management_alg:
+          type: string
+          enum:
+            - RSA1_5
+            - RSA_OAEP
+            - RSA_OAEP_256
+            - ECDH_ES
+            - ECDH_ES_A128KW
+            - ECDH_ES_A192KW
+            - ECDH_ES_A256KW
+        allowed_content_encryption_alg:
+          type: string
+          enum:
+            - A128CBC_HS256
+            - A192CBC_HS384
+            - A256CBC_HS512
+            - A128GCM
+            - A192GCM
+            - A256GCM
+        encryption_key_id:
+          type: string
+    JwtAssertionAttributes:
+      type: object
+      properties:
+        allow_reuse:
+          type: boolean
+        issuer:
+          type: string
+        signing:
+          $ref: '#/components/schemas/JwtSigningAttributes'
+    JwtSigningAttributes:
+      type: object
+    LocalTime:
+      type: object
+      properties:
+        hour:
+          type: integer
+          format: int32
+        minute:
+          type: integer
+          format: int32
+        second:
+          type: integer
+          format: int32
+        nano:
+          type: integer
+          format: int32
+    Meta:
+      type: object
+      properties:
+        warnings:
+          type: object
+          additionalProperties:
+            type: string
+        location:
+          type: string
+        lastModified:
+          type: string
+          format: date-time
+        version:
+          type: string
+        created:
+          type: string
+          format: date-time
+        timezone:
+          type: object
+          properties:
+            id:
+              type: string
+            rules:
+              type: object
+              properties:
+                fixedOffset:
+                  type: boolean
+                transitions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      offsetBefore:
+                        type: object
+                        properties:
+                          totalSeconds:
+                            type: integer
+                            format: int32
+                          id:
+                            type: string
+                      offsetAfter:
+                        type: object
+                        properties:
+                          totalSeconds:
+                            type: integer
+                            format: int32
+                          id:
+                            type: string
+                      overlap:
+                        type: boolean
+                      duration:
+                        type: object
+                        properties:
+                          seconds:
+                            type: integer
+                            format: int64
+                          zero:
+                            type: boolean
+                          nano:
+                            type: integer
+                            format: int32
+                          negative:
+                            type: boolean
+                          positive:
+                            type: boolean
+                          units:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                durationEstimated:
+                                  type: boolean
+                                timeBased:
+                                  type: boolean
+                                dateBased:
+                                  type: boolean
+                      gap:
+                        type: boolean
+                      dateTimeAfter:
+                        type: string
+                        format: date-time
+                      dateTimeBefore:
+                        type: string
+                        format: date-time
+                      instant:
+                        type: string
+                        format: date-time
+                transitionRules:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      month:
+                        type: string
+                        enum:
+                          - JANUARY
+                          - FEBRUARY
+                          - MARCH
+                          - APRIL
+                          - MAY
+                          - JUNE
+                          - JULY
+                          - AUGUST
+                          - SEPTEMBER
+                          - OCTOBER
+                          - NOVEMBER
+                          - DECEMBER
+                      timeDefinition:
+                        type: string
+                        enum:
+                          - UTC
+                          - WALL
+                          - STANDARD
+                      standardOffset:
+                        type: object
+                        properties:
+                          totalSeconds:
+                            type: integer
+                            format: int32
+                          id:
+                            type: string
+                      offsetBefore:
+                        type: object
+                        properties:
+                          totalSeconds:
+                            type: integer
+                            format: int32
+                          id:
+                            type: string
+                      offsetAfter:
+                        type: object
+                        properties:
+                          totalSeconds:
+                            type: integer
+                            format: int32
+                          id:
+                            type: string
+                      dayOfWeek:
+                        type: string
+                        enum:
+                          - MONDAY
+                          - TUESDAY
+                          - WEDNESDAY
+                          - THURSDAY
+                          - FRIDAY
+                          - SATURDAY
+                          - SUNDAY
+                      dayOfMonthIndicator:
+                        type: integer
+                        format: int32
+                      localTime:
+                        $ref: '#/components/schemas/LocalTime'
+                      midnightEndOfDay:
+                        type: boolean
+        resourceType:
+          type: string
+    ProofKeyAttributes:
+      type: object
+      properties:
+        require_proof_key:
+          type: string
+        disallow_challenge_method_s256:
+          type: string
+        disallow_challenge_method_plain:
+          type: string
+    RefreshTokenConfigAttributes:
+      type: object
+      properties:
+        reuse:
+          type: boolean
+        refresh_token_ttl:
+          type: integer
+          format: int64
+        refresh_token_max_rolling_lifetime:
+          type: integer
+          format: int64
+    RequestObjectAttributes:
+      type: object
+      properties:
+        request_jwt_signature_verification_key:
+          type: string
+        by_reference:
+          $ref: '#/components/schemas/ByRefRequestObjectAttributes'
+        request_jwt_issuer:
+          type: string
+    RopcCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+        credential_manager_id:
+          type: string
+    TokenExchangeCapability:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CODE
+            - IMPLICIT
+            - ROPC
+            - ASSERTION
+            - ASSISTED_TOKEN
+            - BACKCHANNEL_AUTHENTICATION
+            - CLIENT_CREDENTIALS
+            - INTROSPECTION
+            - TOKEN_EXCHANGE
+            - HAAPI
+    UserAuthenticationConfigAttributes:
+      type: object
+      properties:
+        locale:
+          type: string
+        allowed_authenticator_list:
+          type: array
+          items:
+            type: string
+        allowed_post_logout_redirect_uri_strings:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+        allowed_post_logout_redirect_uris:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+            format: uri
+        allowed_authenticators:
+          type: array
+          items:
+            type: string
+        authenticator_filters:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+        frontchannel_logout_uri:
+          type: string
+        backchannel_logout_uri:
+          type: string
+        consent:
+          $ref: '#/components/schemas/UserConsentAttributes'
+        context_info:
+          type: string
+        force_authentication:
+          type: boolean
+        freshness:
+          type: integer
+          format: int64
+        http_client_id:
+          type: string
+        required_claims:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+        template_area:
+          type: string
+        front_channel_logout_session_required:
+          type: boolean
+        back_channel_logout_session_required:
+          type: boolean
+    UserConsentAttributes:
+      type: object
+      properties:
+        consentors:
+          type: array
+          items:
+            type: string
+    DatabaseClientAttributesFiltering:
+      type: object
+      properties:
+        tags_filter:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+        search_terms_filter:
+          type: string
+        client_name_filter:
+          type: string
+    PaginationRequest:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int32
+        cursor:
+          type: string
+    DatabaseClientAttributesSorting:
+      type: object
+      properties:
+        sort_by:
+          type: string
+        sort_order:
+          type: string
+          enum:
+            - ASCENDING
+            - DESCENDING
+        secondary_sort_by:
+          type: string
