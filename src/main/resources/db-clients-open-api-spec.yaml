@@ -37,11 +37,13 @@ paths:
         "401":
           description: unauthorized
         "200":
-          description: success
+          description: Success response with a list of database clients.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DatabaseClientAttributes'
+                type: array
+                items:
+                  $ref: '#/components/schemas/DatabaseClientAttributes'
         "404":
           description: client not found
     post:
