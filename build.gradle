@@ -20,7 +20,7 @@ plugins {
 }
 
 group = 'io.curity.identityserver.plugin.data.access.json'
-version = '0.0.1'
+version = '0.0.2'
 description = 'JSON DAP with Clients support'
 
 repositories {
