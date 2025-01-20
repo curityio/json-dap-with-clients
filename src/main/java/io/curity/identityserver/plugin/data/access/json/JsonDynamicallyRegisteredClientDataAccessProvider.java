@@ -50,6 +50,11 @@ public class JsonDynamicallyRegisteredClientDataAccessProvider implements Dynami
     public @Nullable DynamicallyRegisteredClientAttributes getByClientId(String clientId) {
         _logger.debug("Getting dynamic client with Id: {}", clientId);
         HttpResponse httpResponse = sendHttpRequest(HttpMethod.GET.getMethodString(), String.join("/", _configuration.urlPath(), clientId), (String) null);
+
+        if (httpResponse.statusCode() != 200) {
+            return null;
+        }
+
         String responseBody = httpResponse.body(asString());
         _logger.debug("Received dynamic client JSON response: {}", responseBody);
 
