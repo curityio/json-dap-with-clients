@@ -37,4 +37,8 @@ public interface JsonDataAccessProviderConfiguration extends Configuration
     @Name("database-clients")
     DatabaseClientConfiguration getDatabaseClientConfiguration();
 
+
+    @Name("dynamically-registered-clients")
+    DynamicallyRegisteredClientConfiguration getDynamicallyRegisterClientConfiguration();
+
 }
